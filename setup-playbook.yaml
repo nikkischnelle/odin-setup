@@ -1,0 +1,251 @@
+---
+- name: Setup Rocky Linux 9 Server
+  hosts: all
+  become: yes
+  vars:
+    smtp_password: "YOUR_SMTP_PASSWORD"  # Replace with your actual password or set it using Ansible vault
+
+  tasks:
+    - name: Set a hostname
+      ansible.builtin.hostname:
+        name: odin
+
+    - name: Update all packages
+      dnf:
+        name: "*"
+        state: latest
+
+    - name: Reboot
+      ansible.builtin.reboot:
+        reboot_timeout: 600
+        reboot_msg: "Rebooting the server"
+
+    - name: Install ZFS repository
+      command: dnf install -y https://zfsonlinux.org/epel/zfs-release-2-3{{ ansible_distribution | lower }}{{ ansible_distribution_major_version }}$(rpm --eval "%{dist}").noarch.rpm
+
+    - name: Install EPEL release
+      dnf:
+        name: epel-release
+        state: present
+
+    - name: Install kernel-devel
+      dnf:
+        name: kernel-devel
+        state: present
+
+    - name: Install ZFS
+      dnf:
+        name: zfs
+        state: present
+
+    - name: Install additional packages
+      dnf:
+        name:
+          - git
+          - neovim
+          - python3-jinja2
+          - glances
+          - virtiofsd
+        state: present
+
+    - name: Configure Postfix main.cf
+      copy:
+        dest: /etc/postfix/main.cf
+        content: |
+          relayhost = [smtp.protonmail.ch]:587
+          smtp_sasl_auth_enable = yes
+          smtp_sasl_password_maps = hash:/etc/postfix/sasl_passwd
+          smtp_sasl_security_options = noanonymous
+          smtp_tls_security_level = encrypt
+          smtp_tls_CAfile = /etc/ssl/certs/ca-bundle.crt
+          smtp_sasl_tls_security_options = noanonymous
+          sender_canonical_maps = hash:/etc/postfix/sender_canonical
+          smtp_generic_maps = hash:/etc/postfix/generic
+          virtual_alias_maps = hash:/etc/postfix/virtual
+
+    - name: Configure /etc/postfix/sender_canonical
+      copy:
+        dest: /etc/postfix/sender_canonical
+        content: |
+          /.+/    admin@schnelle.dev
+
+    - name: Configure /etc/postfix/generic
+      copy:
+        dest: /etc/postfix/generic
+        content: |
+          @odin.local    admin@schnelle.dev
+
+    - name: Configure /etc/postfix/virtual
+      copy:
+        dest: /etc/postfix/virtual
+        content: |
+          @odin.local nikki@schnelle.dev
+
+    - name: Configure /etc/postfix/sasl_passwd
+      copy:
+        dest: /etc/postfix/sasl_passwd
+        content: |
+          [smtp.protonmail.ch]:587    admin@schnelle.dev:{{ smtp_password }}
+        mode: '0600'
+
+    - name: Set permissions for Postfix files
+      file:
+        path: "{{ item }}"
+        mode: '0600'
+      loop:
+        - /etc/postfix/sasl_passwd
+        - /etc/postfix/virtual
+        - /etc/postfix/generic
+        - /etc/postfix/sender_canonical
+
+    - name: Run postmap on Postfix files
+      command: "postmap {{ item }}"
+      loop:
+        - /etc/postfix/sasl_passwd
+        - /etc/postfix/virtual
+        - /etc/postfix/generic
+        - /etc/postfix/sender_canonical
+
+    - name: Reload Postfix
+      systemd:
+        name: postfix
+        state: reloaded
+
+    - name: Restart Postfix
+      systemd:
+        name: postfix
+        state: restarted
+
+    - name: Test email configuration
+      shell: echo "Setting up email was successful using ansible" | mail -s "Test Email" root
+
+    - name: Create smartdnotify script
+      copy:
+        dest: /usr/local/bin/smartdnotify
+        content: |
+          #!/bin/sh
+          # Send email
+          echo "$SMARTD_MESSAGE" | mail -s "$SMARTD_FAILTYPE" "$SMARTD_ADDRESS"
+          # Notify user
+          wall "$SMARTD_MESSAGE"
+          # Notify using ntfy.sh
+          curl -d "SMART Failure: $SMARTD_FAILTYPE" {TOPIC}
+        mode: '0755'
+
+    - name: Configure smartd.conf
+      copy:
+        dest: /etc/smartmontools/smartd.conf
+        content: |
+          DEVICESCAN -a -o on -S on -s (S/../.././00|L/../../7/./01|X/../.././06) -m root -M exec /usr/local/bin/smartdnotify -n sleep
+
+    - name: Reload smartd service
+      systemd:
+        name: smartd
+        state: reloaded
+
+    - name: Configure zed.rc
+      copy:
+        dest: /etc/zfs/zed.d/zed.rc
+        content: |
+          ZED_EMAIL_ADDR="root"
+          ZED_EMAIL_PROG="mail"
+          ZED_EMAIL_OPTS="-s '@SUBJECT@' @ADDRESS@"
+          ZED_NOTIFY_VERBOSE=1
+
+    - name: Restart zfs-zed service
+      systemd:
+        name: zfs-zed.service
+        state: restarted
+
+
+    - name: Create test directory
+      file:
+        path: /my-zfs-test
+        state: directory
+
+    - name: Create test disk1 image
+      command: dd if=/dev/zero of=/my-zfs-test/disk1.img bs=1M count=64
+
+    - name: Create test disk2 image
+      command: dd if=/dev/zero of=/my-zfs-test/disk2.img bs=1M count=64
+
+    - name: Create ZFS pool
+      command: zpool create mypool mirror /my-zfs-test/disk1.img /my-zfs-test/disk2.img
+
+    - name: Scrub ZFS pool
+      command: zpool scrub mypool
+
+    - name: Install zfs-test package
+      dnf:
+        name: zfs-test
+        state: present
+
+    - name: Inject fault into ZFS pool
+      command: zinject -d /my-zfs-test/disk1.img -e io -T all -f 100 mypool
+
+    - name: Scrub ZFS pool after fault injection
+      command: zpool scrub mypool
+
+    - name: Wait for 30 seconds
+      wait_for:
+        timeout: 30
+
+    - name: Clear ZFS pool injections
+      command: zinject -c all
+
+    - name: Clear ZFS pool
+      command: zpool clear mypool
+
+    - name: Destroy ZFS pool
+      command: zpool destroy mypool
+
+    - name: Remove test directory
+      file:
+        path: /my-zfs-test
+        state: absent
+
+    - name: Remove zfs-test package
+      dnf:
+        name: zfs-test
+        state: absent
+
+    - name: Setup cron job for ZFS scrubbing
+      cron:
+        name: "Monthly ZFS scrub"
+        minute: "0"
+        hour: "0"
+        day: "1"
+        month: "*"
+        weekday: "*"
+        job: "zpool list -H -o name | xargs -n1 zpool scrub"
+
+    - name: Ensure policycoreutils-python-utils is installed (for semanage)
+      dnf:
+        name: policycoreutils-python-utils
+        state: present
+
+    - name: Execute semanage import commands
+      shell: |
+        semanage import <<EOF
+        boolean -D
+        login -D
+        interface -D
+        user -D
+        port -D
+        node -D
+        fcontext -D
+        module -D
+        ibendport -D
+        ibpkey -D
+        permissive -D
+        boolean -m -1 container_use_devices
+        boolean -m -1 container_use_dri_devices
+        boolean -m -1 domain_can_mmap_files
+        boolean -m -0 httpd_can_network_connect
+        boolean -m -1 samba_export_all_ro
+        boolean -m -1 samba_export_all_rw
+        boolean -m -1 virt_sandbox_use_all_caps
+        boolean -m -1 virt_sandbox_use_netlink
+        boolean -m -1 virt_use_nfs
+        port -a -t http_port_t -r 's0' -p tcp 2020
+        EOF
