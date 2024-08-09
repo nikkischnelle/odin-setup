@@ -1,7 +1,7 @@
 [Unit]
 Description=Authentik Worker
-Requires=postgres.service redis.service 
-After=postgres.service redis.service
+Requires=postgres.service redis.service authentik-network.service
+After=postgres.service redis.service authentik-network.service
 
 [Container]
 Image=ghcr.io/goauthentik/server:2024.6.2
@@ -10,6 +10,7 @@ ContainerName=authentik-server
 Volume=/${HOME}/certs:/certs:z
 Volume=/${HOME}/media:/media:z
 Volume=/${HOME}/custom-templates:/templates:z
+Network=authentik
 
 Exec=worker
 UserNS=keep-id

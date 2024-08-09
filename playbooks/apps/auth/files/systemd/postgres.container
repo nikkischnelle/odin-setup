@@ -1,13 +1,14 @@
 [Unit]
 Description=Postgres DB for Authentik
-Requires=pgdata-volume.service
-After=pgdata-volume.service
+Requires=pgdata-volume.service authentik-network.service
+After=pgdata-volume.service authentik-network.service
 
 [Container]
 Image=docker.io/library/postgres:latest
 Label=io.containers.autoupdate=registry
 ContainerName=postgres-authentik
 Volume=pgdata:/var/lib/postgresql/data
+Network=authentik
 
 EnvironmentFile=/${HOME}/.env
 

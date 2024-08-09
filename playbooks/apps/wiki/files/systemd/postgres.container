@@ -1,12 +1,13 @@
 [Unit]
 Description=Postgres DB for WikiJS
-Requires=pgdata-volume.service
-After=pgdata-volume.service
+Requires=pgdata-volume.service wiki-network.service
+After=pgdata-volume.service wiki-network.service
 
 [Container]
 Image=docker.io/library/postgres:latest
 Label=io.containers.autoupdate=registry
 ContainerName=wikipostgres
+Network=wiki
 
 Volume=pgdata:/var/lib/postgresql/data
 

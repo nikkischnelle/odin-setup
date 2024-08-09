@@ -1,7 +1,7 @@
 [Unit]
 Description=WikiJS Instance
-Requires=postgres.service
-After=postgres.service
+Requires=postgres.service wiki-network.service
+After=postgres.service wiki-network.service
 
 [Container]
 Image=ghcr.io/requarks/wiki:latest
@@ -10,6 +10,7 @@ ContainerName=wikijs
 PublishPort=3002:3000
 EnvironmentFile=/${HOME}/.env
 DNS=9.9.9.9
+Network=wiki
 
 [Service]
 Restart=on-failure

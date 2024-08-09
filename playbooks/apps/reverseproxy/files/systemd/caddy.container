@@ -1,0 +1,19 @@
+[Unit]
+Description=Caddy reverse proxy
+After=caddydata-volume.service
+Requires=caddydata-volume.service
+
+[Container]
+Image=docker.io/library/caddy:latest
+Label=io.containers.autoupdate=registry
+Volume=/${HOME}/Caddyfile:/etc/caddy/Caddyfile:z,ro
+Volume=/${HOME}/config:/config:z,ro
+Volume=caddydata:/data
+Network=host
+
+[Service]
+Restart=always
+
+[Install]
+# Start by default on boot
+WantedBy=default.target

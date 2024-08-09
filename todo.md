@@ -1,0 +1,1 @@
+- for user in $(awk -F: '$3 > 1000 && $3 < 6000 {print $1}' /etc/passwd); do sudo mkdir /Balmung/backup/apps/$user; sudo chown $user:$user /Balmung/backup/apps/$user; done

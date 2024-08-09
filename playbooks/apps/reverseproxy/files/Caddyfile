@@ -1,0 +1,59 @@
+{
+    http_port 80
+    https_port 443
+}
+
+cloud.queercrew.de {
+    reverse_proxy http://192.168.10.3:11000
+}
+
+cloud.schnelle.dev {
+    header Location http:// https://
+    header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+    redir /.well-known/carddav /remote.php/dav 301
+    redir /.well-known/caldav /remote.php/dav 301
+    redir /.well-known/webfinger /index.php/.well-known/webfinger 301
+    redir /.well-known/nodeinfo /index.php/.well-known/nodeinfo 301
+
+    reverse_proxy http://127.0.0.1:5080
+}
+
+ha.schnelle.dev {
+    reverse_proxy http://127.0.0.1:8123
+}
+
+id.schnelle.dev {
+    reverse_proxy http://127.0.0.1:2080
+}
+
+nikki.schnelle.dev {
+    reverse_proxy http://127.0.0.1:1080
+}
+
+nikki.tschierske.com {
+    reverse_proxy http://127.0.0.1:1080
+}
+
+paperless.schnelle.dev {
+    reverse_proxy http://127.0.0.1:8000
+}
+
+shork.schnelle.dev {
+    reverse_proxy http://127.0.0.1:8096
+}
+
+vault.queercrew.de {
+    reverse_proxy http://127.0.0.1:8080
+}
+
+wiki.schnelle.dev {
+    reverse_proxy http://127.0.0.1:3002
+}
+
+chat.schnelle.dev {
+    reverse_proxy http://127.0.0.1:3478
+}
+
+photos.schnelle.dev {
+    reverse_proxy http://127.0.0.1:2283
+}

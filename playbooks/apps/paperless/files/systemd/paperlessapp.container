@@ -1,12 +1,13 @@
 [Unit]
 Description=Paperless NGX App
-Requires=redis.service tika.service gotenberg.service
-After=redis.service tika.service gotenberg.service
+Requires=redis.service tika.service gotenberg.service paperless-network.service
+After=redis.service tika.service gotenberg.service paperless-network.service
 
 [Container]
 Image=ghcr.io/paperless-ngx/paperless-ngx:latest
 Label=io.containers.autoupdate=registry
 ContainerName=paperless-app
+Network=paperless
 
 PublishPort=8000:8000
 

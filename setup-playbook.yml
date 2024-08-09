@@ -21,6 +21,11 @@
         name: epel-release
         state: present
 
+    - name: Install Tailscale Repo
+      community.general.dnf_config_manager:
+        name: "https://pkgs.tailscale.com/stable/rhel/9/tailscale.repo"
+        state: enabled
+
     - name: Install basic packages
       dnf:
         name: 

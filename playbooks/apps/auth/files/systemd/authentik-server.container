@@ -1,7 +1,7 @@
 [Unit]
 Description=Authentik Server
-Requires=postgres.service redis.service authentik-worker.service
-After=postgres.service redis.service
+Requires=postgres.service redis.service authentik-worker.service authentik-network.service
+After=postgres.service redis.service authentik-network.service
 
 [Container]
 Image=ghcr.io/goauthentik/server:2024.6.2
@@ -13,6 +13,7 @@ PublishPort=2080:9000
 PublishPort=2443:9443
 Exec=server
 UserNS=keep-id
+Network=authentik
 
 EnvironmentFile=/${HOME}/.env
 

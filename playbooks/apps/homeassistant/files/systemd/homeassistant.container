@@ -1,6 +1,5 @@
 [Unit]
 Description=HomeAssistant Container
-Requires=esphome.service mosquitto.service nodered.service piper.service zigbee2mqtt.service
 
 [Container]
 Image=ghcr.io/home-assistant/home-assistant:stable

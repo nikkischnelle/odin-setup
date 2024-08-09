@@ -10,6 +10,7 @@
     volume_directories:
       - config
       - Caddyfile
+      - data
 
   tasks:
     - name: "Ensure User exists"

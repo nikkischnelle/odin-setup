@@ -6,10 +6,10 @@ Requires=nextcloud-network.service postgres.service redis.service imaginary.serv
 [Container]
 Image=docker.io/library/nextcloud:fpm
 Label=io.containers.autoupdate=registry
-ContainerName=nextcloud
+ContainerName=app
 Network=nextcloud-network
 
-Volume=/{HOME}/nextcloud-data:/var/www/html:z
+Volume=/${HOME}/nextcloud-data:/var/www/html:z
 EnvironmentFile=/${HOME}/.env
 
 [Service]
