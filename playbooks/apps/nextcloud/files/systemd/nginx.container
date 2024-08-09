@@ -1,0 +1,17 @@
+[Unit]
+Description=NginX Container for Nextcloud
+After=nextcloud.service
+Requires=nextcloud.service
+
+[Container]
+Image=docker.io/library/nginx:latest
+ContainerName=nextcloud-nginx
+Network=nextcloud-network
+
+Volume=/${HOME}/nextcloud-data:/var/www/html:z
+Volume=/${HOME}/nginx.conf:/etc/nginx/nginx.conf:ro,Z
+
+PublishPort=5080:80
+
+[Install]
+WantedBy=default.target

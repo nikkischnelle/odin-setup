@@ -1,0 +1,76 @@
+---
+- name: Setup Nextcloud
+  hosts: all
+  become: yes
+  vars:
+    username: "nextcloud"
+    user_id: "3009"
+    home_dir: "/Gungnir/apps/{{ username }}"
+    quadlet_dir: "{{ home_dir }}/.config/containers"
+    volume_directories:
+      - nextcloud-data
+
+  tasks:
+    - name: "Ensure User exists"
+      user:
+        name: "{{ username }}"
+        uid: "{{ user_id }}"
+        home: "{{ home_dir }}"
+        shell: /bin/zsh
+        state: present
+        groups:
+        - shared_ssh_key
+        - systemd-journal
+
+    - name: "Delete .config/containers/systemd"
+      file:
+        path: "{{ quadlet_dir }}/systemd"
+        state: absent
+
+    - name: "Make sure .config/containers directory exists"
+      file:
+        path: "{{ quadlet_dir }}"
+        owner: "{{ username }}" 
+        group: "{{ username }}"
+        state: directory
+
+    - name: "Copy quadlet files"
+      copy:
+        src: files/systemd
+        dest: "{{ quadlet_dir }}"
+        owner: "{{ username }}"
+        group: "{{ username }}"
+
+    - name: "Copy backup.sh file"
+      copy:
+        src: files/backup.sh
+        dest: "{{ home_dir }}"
+        owner: "{{ username }}"
+        group: "{{ username }}"
+
+    - name: "Copy .env file"
+      copy:
+        src: files/.env
+        dest: "{{ home_dir }}"
+        owner: "{{ username }}"
+        group: "{{ username }}"
+
+    - name: "Copy runonce.sh file"
+      copy:
+        src: files/runonce.sh
+        dest: "{{ home_dir }}"
+        owner: "{{ username }}"
+        group: "{{ username }}"
+
+    - name: "Ensure volume directories exist"
+      file:
+        path: "{{ home_dir }}/{{ item }}"
+        owner: "{{ username }}"
+        group: "{{ username }}"
+      loop: "{{ volume_directories }}"
+
+    - name: "Download nginx configuration"
+      get_url:
+        url: "https://raw.githubusercontent.com/nextcloud/docker/master/.examples/docker-compose/with-nginx-proxy/postgres/fpm/web/nginx.conf"
+        dest: "{{ home_dir }}/nginx.conf"
+        mode: "644"

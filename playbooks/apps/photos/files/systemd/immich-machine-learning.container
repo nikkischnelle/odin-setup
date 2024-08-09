@@ -1,0 +1,17 @@
+[Unit]
+Description=Immich Machine Learning
+Requires=model-cache-volume.service database.service redis.service immich-server.service immich-network.service
+After=model-cache-volume.service redis.service database.service immich-network.service
+
+[Container]
+Image=ghcr.io/immich-app/immich-machine-learning:release
+Label=io.containers.autoupdate=registry
+ContainerName=immich-machine-learning
+Network=immich
+
+Volume=model-cache:/usr/src/app/upload:z
+EnvironmentFile=/${HOME}/.env
+
+[Service]
+Restart=on-failure
+RestartSec=10s

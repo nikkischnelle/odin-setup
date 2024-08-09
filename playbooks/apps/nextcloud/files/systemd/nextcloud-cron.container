@@ -1,0 +1,20 @@
+[Unit]
+Description=Nextcloud Container
+After=nextcloud-network.service postgres.service redis.service
+Requires=nextcloud.service
+
+[Container]
+Image=docker.io/library/nextcloud:latest
+Label=io.containers.autoupdate=registry
+ContainerName=nextcloud-cron
+Network=nextcloud-network
+
+Volume=/${HOME}/nextcloud-data:/var/www/html:z
+PodmanArgs= --entrypoint /cron.sh
+
+[Service]
+Restart=on-failure
+RestartSec=10s
+
+[Install]
+WantedBy=default.target

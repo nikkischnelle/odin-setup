@@ -1,0 +1,18 @@
+[Unit]
+Description=Redis for Paperless NGX
+
+Requires=redisdata-volume.service
+After=redisdata-volume.service
+
+[Container]
+Image=docker.io/library/redis:alpine
+Label=io.containers.autoupdate=registry
+ContainerName=paperless-redis
+Volume=redisdata:/data
+
+[Service]
+Restart=on-failure
+RestartSec=10s
+
+[Install]
+WantedBy=default.target

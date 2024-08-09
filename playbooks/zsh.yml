@@ -1,0 +1,99 @@
+---
+- name: Configure ZSH
+  hosts: all
+  become: yes
+  tasks:
+    - name: Ensure /etc/globalconfig/zsh directory exists
+      file:
+        path: /etc/globalconfig/zsh
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+
+    - name: Copy zshrc to globalconfig
+      copy:
+        content: |
+          # History
+          export ZSH_LOCAL=$HOME/.config/zsh
+          HISTFILE=$ZSH_LOCAL/hist
+          HISTSIZE=1000
+          SAVEHIST=1000
+          HIST_STAMPS="dd.mm.yyyy"
+          setopt HIST_EXPIRE_DUPS_FIRST
+          setopt HIST_IGNORE_DUPS
+          setopt HIST_IGNORE_ALL_DUPS
+          setopt HIST_IGNORE_SPACE
+          setopt HIST_SAVE_NO_DUPS
+          setopt appendhistory
+          setopt auto_pushd
+          setopt interactivecomments
+          autoload -U compinit
+          compinit -d $ZSH_LOCAL/zcompdump-$HOST
+
+          alias wget="wget --hsts-file /dev/null"
+          alias cat="bat"
+          alias ls="eza --icons"
+          alias quadlet-check="/usr/lib/systemd/system-generators/podman-system-generator --user --dryrun"
+          cd() { builtin cd "$@" && ls -a; }
+          source /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+          source /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh
+          export LC_ALL="en_US.UTF-8"
+          export TERM=xterm
+          export EDITOR="nvim"
+          export PATH="$PATH:$HOME/.local/bin:/root/.cargo/bin:$HOME/.cargo/bin:/usr/local/bin"
+          eval $(thefuck --alias)
+          eval "$(starship init zsh)"
+        dest: /etc/globalconfig/zsh/.zshrc
+        mode: '0644'
+
+    - name: Delete skel directory
+      file:
+        path: /etc/skel/
+        state: absent
+
+    - name: Recreate /etc/skel directory
+      file:
+        path: /etc/skel
+        state: directory
+        mode: '0755'
+
+    - name: Create zsh config directory (for history)
+      file:
+        path: /etc/skel/.config/zsh
+        state: directory
+        mode: '0755'
+
+    - name: Create .zshenv file
+      copy:
+        content: |
+          export ZDOTDIR="/etc/globalconfig/zsh"
+        dest: /etc/skel/.zshenv
+        mode: '0644'
+
+    - name: Get main user(id=1000)'s home directory
+      shell: "getent passwd 1000 | cut -d: -f6"
+      register: user_home_dir
+      changed_when: false
+
+    - name: Get main user(id=1000)
+      command: "getent passwd 1000"
+      register: passwd_entry
+      changed_when: false
+
+    - name: Get main users username
+      set_fact:
+        main_username: "{{ passwd_entry.stdout.split(':')[0] }}"
+
+    - name: Copy zshenv to main user directory
+      copy:
+        src: /etc/skel/.zshenv
+        dest: "{{ user_home_dir }}/"
+        remote_src: True
+        owner: "{{ main_username }}"
+        group: "{{ main_username }}"
+
+    - name: change user 1000's shell to zsh
+      user:
+        name: "{{ main_username }}"
+        shell: "/bin/zsh"

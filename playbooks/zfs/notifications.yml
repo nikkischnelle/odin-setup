@@ -1,0 +1,69 @@
+---
+- name: Configure and Test ZFS Notifications (ZED)
+  hosts: all
+  become: yes
+  tasks:
+    - name: Configure zed.rc
+      copy:
+        dest: /etc/zfs/zed.d/zed.rc
+        content: |
+          ZED_EMAIL_ADDR="root"
+          ZED_EMAIL_PROG="mail"
+          ZED_EMAIL_OPTS="-s '@SUBJECT@' @ADDRESS@"
+          ZED_NOTIFY_VERBOSE=1
+
+    - name: Restart zfs-zed service
+      systemd:
+        name: zfs-zed.service
+        state: restarted
+
+    - name: Create test directory
+      file:
+        path: /my-zfs-test
+        state: directory
+
+    - name: Create test disk1 image
+      command: dd if=/dev/zero of=/my-zfs-test/disk1.img bs=1M count=64
+
+    - name: Create test disk2 image
+      command: dd if=/dev/zero of=/my-zfs-test/disk2.img bs=1M count=64
+
+    - name: Create ZFS pool
+      command: zpool create mypool mirror /my-zfs-test/disk1.img /my-zfs-test/disk2.img
+
+    - name: Scrub ZFS pool
+      command: zpool scrub mypool
+
+    - name: Install zfs-test package
+      dnf:
+        name: zfs-test
+        state: present
+
+    - name: Inject fault into ZFS pool
+      command: zinject -d /my-zfs-test/disk1.img -e io -T all -f 100 mypool
+
+    - name: Scrub ZFS pool after fault injection
+      command: zpool scrub mypool
+
+    - name: Wait for 30 seconds
+      wait_for:
+        timeout: 30
+
+    - name: Clear ZFS pool injections
+      command: zinject -c all
+
+    - name: Clear ZFS pool
+      command: zpool clear mypool
+
+    - name: Destroy ZFS pool
+      command: zpool destroy mypool
+
+    - name: Remove test directory
+      file:
+        path: /my-zfs-test
+        state: absent
+
+    - name: Remove zfs-test package
+      dnf:
+        name: zfs-test
+        state: absent

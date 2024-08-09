@@ -1,0 +1,42 @@
+---
+- name: Install Cockpit's ZFS Module
+  hosts: all
+  become: yes
+  tasks:
+    - name: Download cockpit zfs manager
+      ansible.builtin.git:
+        repo: https://github.com/45drives/cockpit-zfs-manager.git
+        dest: /tmp/cockpit-zfs-manager
+
+    - name: Copy cockpit zfs manager to cockpit
+      command: cp -r /tmp/cockpit-zfs-manager/zfs /usr/share/cockpit
+
+    - name: Delete cockpit zfs manager repo
+      command: rm -rf /tmp/cockpit-zfs-manager
+
+    - name: Download Font Fix
+      command: curl -sSL https://scripts.45drives.com/cockpit_font_fix/fix-cockpit.sh -o /tmp/fix-cockpit.sh
+
+    - name: Run Font Fix
+      command: /bin/bash /tmp/fix-cockpit.sh
+
+    - name: "Fix Font Permissions 1"
+      command: chmod a+rx /usr/share/cockpit/static/fonts -R
+
+    - name: "Fix Font Permissions 2"
+      command: chmod a+rx /usr/share/cockpit/base1/fonts -R
+
+    - name: Delete Font Fix
+      command: rm -rf /tmp/fix-cockpit.sh
+
+    - name: Fix Frontend Permissions
+      command: chmod a+rx /usr/share/cockpit/zfs -R
+
+    - name: Fix Frontend SELinux Label
+      command: chcon -R -u system_u /usr/share/cockpit/zfs
+
+    - name: Fix Configuration Permissions
+      command: chmod a+rx /etc/cockpit/zfs -R
+
+    - name: Fix Configuration SELinux Label
+      command: chcon -R -u system_u /etc/cockpit/zfs

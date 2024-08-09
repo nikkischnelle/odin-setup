@@ -1,0 +1,67 @@
+---
+- name: Set up firewall rules
+  hosts: all
+  become: yes
+  tasks:
+    - name: "Allow Homeassistant WebUI"
+      ansible.posix.firewalld:
+        port: 8123/tcp
+        permanent: true
+        state: enabled
+
+    - name: "Allow Uptime Kuma WebUI"
+      ansible.posix.firewalld:
+        port: 3001/tcp
+        permanent: true
+        state: enabled
+
+    - name: "Allow Speedtest Tracker WebUI"
+      ansible.posix.firewalld:
+        port: 8088/tcp
+        permanent: true
+        state: enabled
+
+    - name: "Allow HTTP"
+      ansible.posix.firewalld:
+        service: http
+        permanent: true
+        state: enabled
+
+    - name: "Allow HTTPS"
+      ansible.posix.firewalld:
+        service: https
+        permanent: true
+        state: enabled
+
+    - name: "Allow dns"
+      ansible.posix.firewalld:
+        service: dns
+        permanent: true
+        state: enabled
+
+    - name: "Allow piHole WebUI"
+      ansible.posix.firewalld:
+        port: 3037/tcp
+        permanent: true
+        state: enabled
+
+    - name: "Allow Syncthing"
+      ansible.posix.firewalld:
+        service: syncthing
+        permanent: true
+        state: enabled
+
+    - name: "Allow Syncthing WebUI"
+      ansible.posix.firewalld:
+        port: 8384/tcp
+        permanent: true
+        state: enabled
+
+    - name: "Allow Jellyfin WebUI"
+      ansible.posix.firewalld:
+        port: 8096/tcp
+        permanent: true
+        state: enabled
+
+    - name: "Reload Firewall"
+      command: firewall-cmd --reload

@@ -1,0 +1,27 @@
+[Unit]
+After=jellyfin-cache-volume.service
+Requires=jellyfin-cache-volume.service
+RequiresMountsFor=/Balmung/media
+
+[Container]
+Image=docker.io/jellyfin/jellyfin:latest
+Label=io.containers.autoupdate=registry
+PublishPort=8096:8096/tcp
+UserNS=keep-id
+
+Volume=/${HOME}/jellyfin-config:/config:Z
+Volume=jellyfin-cache:/cache:Z
+Volume=/Gungnir/media:/media:z
+
+AddDevice=/dev/dri/renderD128:/dev/dri/renderD128
+PodmanArgs=--group-add keep-groups
+
+[Service]
+# Inform systemd of additional exit status
+SuccessExitStatus=0 143
+Restart=on-failure
+RestartSec=10s
+
+[Install]
+# Start by default on boot
+WantedBy=default.target

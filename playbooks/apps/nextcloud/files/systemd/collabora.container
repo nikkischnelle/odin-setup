@@ -1,0 +1,19 @@
+[Unit]
+Description=Collabora Server for Nextcloud
+After=nextcloud-network.service
+Requires=nextcloud-network.service
+
+[Container]
+Image=docker.io/collabora/code
+Label=io.containers.autoupdate=registry
+ContainerName=collabora
+Network=nextcloud-network
+PublishPort=9980:9980
+
+EnvironmentFile=/${HOME}/.env
+
+AddCapability=MKNOD
+
+[Service]
+Restart=on-failure
+RestartSec=10s

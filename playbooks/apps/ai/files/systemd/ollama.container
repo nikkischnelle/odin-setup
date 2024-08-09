@@ -1,0 +1,12 @@
+[Unit]
+Requires=ollama-volume.service ai-network.service
+After=ai-network.service
+
+[Container]
+Image=docker.io/ollama/ollama
+ContainerName=ollama
+PublishPort=11434:11434
+Volume=ollama:/root/.ollama
+
+[Install]
+WantedBy=default.target

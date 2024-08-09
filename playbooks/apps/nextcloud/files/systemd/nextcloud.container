@@ -1,0 +1,20 @@
+[Unit]
+Description=Nextcloud Container
+After=nextcloud-network.service postgres.service redis.service imaginary.service
+Requires=nextcloud-network.service postgres.service redis.service imaginary.service collabora.service nextcloud-cron.service nginx.service
+
+[Container]
+Image=docker.io/library/nextcloud:fpm
+Label=io.containers.autoupdate=registry
+ContainerName=nextcloud
+Network=nextcloud-network
+
+Volume=/{HOME}/nextcloud-data:/var/www/html:z
+EnvironmentFile=/${HOME}/.env
+
+[Service]
+Restart=on-failure
+RestartSec=10s
+
+[Install]
+WantedBy=default.target

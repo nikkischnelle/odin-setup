@@ -1,0 +1,31 @@
+[Unit]
+Description=Zigbee2-MQTT
+After=homeassistant-network.service mosquitto.service
+Requires=homeassistant-network.service mosquitto.service
+
+[Container]
+ContainerName=zigbee2mqtt
+Image=docker.io/koenkk/zigbee2mqtt
+Label=io.containers.autoupdate=registry
+PublishPort=1180:8080/tcp
+Network=homeassistant
+
+Volume=/${HOME}/zigbee2mqtt/data:/app/data:Z
+Volume=/run/udev:/run/udev:ro
+
+Environment=TZ=Europe/Amsterdam
+
+PodmanArgs=--group-add keep-groups
+UserNS=keep-id
+AddDevice=/dev/ttyUSB0
+
+[Service]
+# Inform systemd of additional exit status
+SuccessExitStatus=0 143
+Restart=on-failure
+RestartSec=10s
+
+[Install]
+# Start by default on boot
+WantedBy=default.target
+

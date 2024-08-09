@@ -1,0 +1,103 @@
+---
+- name: Install mail command
+  import_playbook: mail_command.yml
+
+- name: Configure Postfix
+  hosts: all
+  become: yes
+  tasks:
+    - name: Get the hostname
+      command: hostname
+      register: hostname_result
+
+    - name: Get the domain name
+      command: hostname -d
+      register: domain_result
+      ignore_errors: yes
+
+    - name: Set default domain if no domain is returned
+      set_fact:
+        domain_name: "{{ domain_result.stdout if domain_result.stdout != '' else 'localdomain' }}"
+
+    - name: Construct email address
+      set_fact:
+        email_address: "{{ hostname_result.stdout }}.{{ domain_name }}"
+
+    - name: Install Postfix
+      dnf:
+        name: 
+          - postfix
+          - cyrus-sasl-plain
+        state: present
+    - name: Configure Postfix main.cf
+      copy:
+        dest: /etc/postfix/main.cf
+        content: |
+          relayhost = [{{ smtp_address }}]:{{ smtp_port }}
+          smtp_sasl_auth_enable = yes
+          smtp_sasl_password_maps = hash:/etc/postfix/sasl_passwd
+          smtp_sasl_security_options = noanonymous
+          smtp_tls_security_level = encrypt
+          smtp_tls_CAfile = /etc/ssl/certs/ca-bundle.crt
+          smtp_sasl_tls_security_options = noanonymous
+          sender_canonical_maps = hash:/etc/postfix/sender_canonical
+          smtp_generic_maps = hash:/etc/postfix/generic
+          virtual_alias_maps = hash:/etc/postfix/virtual
+
+    - name: Configure /etc/postfix/sender_canonical
+      copy:
+        dest: /etc/postfix/sender_canonical
+        content: |
+          /.+/    {{ sender_address }}
+
+    - name: Configure /etc/postfix/generic
+      copy:
+        dest: /etc/postfix/generic
+        content: |
+          @{{ email_address }}    {{ sender_address }}
+
+    - name: Configure /etc/postfix/virtual
+      copy:
+        dest: /etc/postfix/virtual
+        content: |
+          @{{ email_address }}   {{ root_email_address }}
+
+    - name: Configure /etc/postfix/sasl_passwd
+      copy:
+        dest: /etc/postfix/sasl_passwd
+        content: |
+          [{{ smtp_address }}]:{{ smtp_port }}    {{ sender_address }}:{{ smtp_password }}
+        mode: '0600'
+      no_log: true
+
+    - name: Set permissions for Postfix files
+      file:
+        path: "{{ item }}"
+        mode: '0600'
+      loop:
+        - /etc/postfix/sasl_passwd
+        - /etc/postfix/virtual
+        - /etc/postfix/generic
+        - /etc/postfix/sender_canonical
+
+    - name: Run postmap on Postfix files
+      command: "postmap {{ item }}"
+      loop:
+        - /etc/postfix/sasl_passwd
+        - /etc/postfix/virtual
+        - /etc/postfix/generic
+        - /etc/postfix/sender_canonical
+
+    - name: Reload Postfix
+      systemd:
+        name: postfix
+        state: reloaded
+
+    - name: Restart Postfix
+      systemd:
+        name: postfix
+        state: restarted
+        enabled: true
+
+    - name: Test email configuration
+      shell: echo "Setting up email was successful using ansible" | mail -s "Test Email" root

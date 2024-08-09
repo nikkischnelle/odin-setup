@@ -1,0 +1,19 @@
+[Unit]
+Description=WikiJS Instance
+Requires=postgres.service
+After=postgres.service
+
+[Container]
+Image=ghcr.io/requarks/wiki:latest
+Label=io.containers.autoupdate=registry
+ContainerName=wikijs
+PublishPort=3002:3000
+EnvironmentFile=/${HOME}/.env
+DNS=9.9.9.9
+
+[Service]
+Restart=on-failure
+RestartSec=10s
+
+[Install]
+WantedBy=default.target

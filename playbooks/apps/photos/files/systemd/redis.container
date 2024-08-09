@@ -1,0 +1,20 @@
+[Unit]
+Description=Redis for Immich
+Requires=immich-network.service
+After=immich-network.service
+
+[Container]
+Image=docker.io/redis:6.2-alpine@sha256:328fe6a5822256d065debb36617a8169dbfbd77b797c525288e465f56c1d392b
+Label=io.containers.autoupdate=registry
+ContainerName=redis
+Network=immich
+
+HealthCmd=redis-cli ping | grep PONG
+HealthStartPeriod=20s
+HealthInterval=30s
+HealthTimeout=3s
+HealthRetries=5
+
+[Service]
+Restart=on-failure
+RestartSec=10s

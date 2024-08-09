@@ -1,0 +1,17 @@
+[Unit]
+Description=Imaginary for Nextcloud
+After=nextcloud-network.service
+Requires=nextcloud-network.service
+
+[Container]
+Image=docker.io/nextcloud/aio-imaginary:latest
+Label=io.containers.autoupdate=registry
+ContainerName=imaginary-nextcloud
+Network=nextcloud-network
+Environment=PORT=9000
+
+Exec=-concurrency 50 -enable-url-source -log-level debug
+
+[Service]
+Restart=on-failure
+RestartSec=10s

@@ -1,0 +1,21 @@
+[Unit]
+Description=Redis for Authentik
+Requires=redisdata-volume.service
+After=redisdata-volume.service
+
+[Container]
+Image=docker.io/library/redis:alpine
+Label=io.containers.autoupdate=registry
+ContainerName=redis-authentik
+Volume=redisdata:/data
+Exec=--save 60 1 --loglevel warning
+
+HealthCmd=redis-cli ping | grep PONG
+HealthStartPeriod=20s
+HealthInterval=30s
+HealthTimeout=3s
+HealthRetries=5
+
+[Service]
+Restart=on-failure
+RestartSec=10s

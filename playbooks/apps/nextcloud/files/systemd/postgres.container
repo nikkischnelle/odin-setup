@@ -1,0 +1,17 @@
+[Unit]
+Description=Postgres DB for Nextcloud
+Requires=nextcloud-network.service pgdata-volume.service
+After=nextcloud-network.service pgdata-volume.service
+
+[Container]
+Image=docker.io/library/postgres:alpine
+Label=io.containers.autoupdate=registry
+ContainerName=postgres-nextcloud
+Volume=pgdata:/var/lib/postgresql/data
+Network=nextcloud-network
+
+EnvironmentFile=/${HOME}/.env
+
+[Service]
+Restart=on-failure
+RestartSec=10s

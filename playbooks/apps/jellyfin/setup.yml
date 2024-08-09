@@ -1,0 +1,47 @@
+---
+- name: Setup Jellyfin
+  hosts: all
+  become: yes
+  vars:
+    username: "jellyfin"
+    user_id: "3003"
+    home_dir: "/Gungnir/apps/{{ username }}"
+    quadlet_dir: "{{ home_dir }}/.config/containers"
+
+  tasks:
+    - name: "Ensure User exists"
+      user:
+        name: "{{ username }}"
+        uid: "{{ user_id }}"
+        home: "{{ home_dir }}"
+        shell: /bin/zsh
+        state: present
+        groups:
+        - shared_ssh_key
+        - systemd-journal
+
+    - name: "Delete .config/containers/systemd"
+      file:
+        path: "{{ quadlet_dir }}/systemd"
+        state: absent
+
+    - name: "Make sure .config/containers directory exists"
+      file:
+        path: "{{ quadlet_dir }}"
+        owner: "{{ username }}" 
+        group: "{{ username }}"
+        state: directory
+
+    - name: "Copy quadlet files"
+      copy:
+        src: files/systemd
+        dest: "{{ quadlet_dir }}"
+        owner: "{{ username }}"
+        group: "{{ username }}"
+
+    - name: "Copy backup.sh file"
+      copy:
+        src: files/backup.sh
+        dest: "{{ home_dir }}"
+        owner: "{{ username }}"
+        group: "{{ username }}"

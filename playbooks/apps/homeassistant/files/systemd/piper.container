@@ -1,0 +1,24 @@
+[Unit]
+Description=Piper for HomeAssistant
+After=homeassistant-network.service
+Requires=homeassistant-network.service homeassistant.service
+
+[Container]
+Image=lscr.io/linuxserver/piper:latest
+Label=io.containers.autoupdate=registry
+ContainerName=piper
+Network=homeassistant
+
+Environment=TZ=Europe/Berlin
+EnvironmentFile=/${HOME}/.env
+
+PublishPort=10200:10200
+
+Volume=/${HOME}/piper-config:/config:Z
+
+[Service]
+Restart=on-failure
+RestartSec=10s
+
+[Install]
+WantedBy=default.target

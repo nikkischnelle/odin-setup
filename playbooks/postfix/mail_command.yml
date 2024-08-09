@@ -1,0 +1,21 @@
+---
+- name: Install package providing the "mail" command
+  hosts: all
+  become: yes
+  tasks:
+    - name: Gather OS specific information
+      ansible.builtin.setup:
+        gather_subset:
+          - "distribution"
+
+    - name: Install mail command on other RedHat family distributions
+      ansible.builtin.dnf:
+        name: s-nail
+        state: present
+      when: ansible_facts['os_family'] == "RedHat"
+
+    - name: Install mail command on Debian/Ubuntu
+      ansible.builtin.apt:
+        name: mailutils
+        state: present
+      when: ansible_facts['os_family'] == "Debian"

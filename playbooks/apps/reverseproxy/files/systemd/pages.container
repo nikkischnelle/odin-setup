@@ -1,0 +1,17 @@
+[Unit]
+Description=Static Web Pages
+
+[Container]
+Image=docker.io/nginx:alpine
+Label=io.containers.autoupdate=registry
+ContainerName=pages
+Volume=/${HOME}/html:/usr/share/nginx/html:Z
+
+PublishPort=1080:80
+
+[Service]
+Restart=on-failure
+RestartSec=10s
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,15 @@
+---
+- import_playbook: ai/setup.yml
+- import_playbook: auth/setup.yml
+- import_playbook: homeassistant/setup.yml
+- import_playbook: jellyfin/setup.yml
+- import_playbook: nextcloud/setup.yml
+- import_playbook: paperless/setup.yml
+- import_playbook: photos/setup.yml
+- import_playbook: pihole/setup.yml
+- import_playbook: reverseproxy/setup.yml
+- import_playbook: staticpages/setup.yml
+- import_playbook: syncthing/setup.yml
+- import_playbook: uptime/setup.yml
+- import_playbook: vaultwarden/setup.yml
+- import_playbook: wiki/setup.yml

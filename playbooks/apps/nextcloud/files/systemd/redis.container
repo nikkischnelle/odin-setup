@@ -1,0 +1,21 @@
+[Unit]
+Description=Redis for Nextcloud
+Requires=redisdata-volume.service
+After=redisdata-volume.service
+
+[Container]
+Image=docker.io/library/redis:alpine
+Label=io.containers.autoupdate=registry
+ContainerName=redis-nextcloud
+Network=nextcloud-network
+Volume=redisdata:/data
+
+HealthCmd=redis-cli ping | grep PONG
+HealthStartPeriod=20s
+HealthInterval=30s
+HealthTimeout=3s
+HealthRetries=5
+
+[Service]
+Restart=on-failure
+RestartSec=10s

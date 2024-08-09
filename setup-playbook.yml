@@ -1,0 +1,136 @@
+---
+- name: Setup Rocky Linux 9 Server
+  hosts: all
+  become: yes
+  vars_files:
+    - vars.yml
+
+  tasks:
+    - name: Set a hostname
+      ansible.builtin.hostname:
+        name: "{{ hostname }}"
+
+    - name: Update all packages
+      dnf:
+        name: "*"
+        state: latest
+      register: update_result
+
+    - name: Install epel-release
+      dnf:
+        name: epel-release
+        state: present
+
+    - name: Install basic packages
+      dnf:
+        name: 
+          - git
+          - glances
+          - virtiofsd
+          - podman
+          - zsh
+          - zsh-syntax-highlighting
+          - zsh-autosuggestions
+          - cmake
+          - eza
+          - bat
+          - rclone
+          - screen
+          - cargo
+          - samba
+          - thefuck
+          - neovim
+          - python3-jinja2
+          - policycoreutils-python-utils
+          - tailscale
+          - authbind
+        state: present
+
+    - name: Reboot
+      ansible.builtin.reboot:
+        reboot_timeout: 600
+      when: update_result.changed
+
+    - name: Install additional cargo packages
+      community.general.cargo:
+        name: starship
+        path: /usr/local
+
+    - name: Fix Starship permissions
+      file:
+        path: /usr/local/bin/starship
+        mode: u=rwx,g=rx,o=rx
+
+    - name: Execute semanage import commands
+      shell: |
+        semanage import <<EOF
+        boolean -D
+        login -D
+        interface -D
+        user -D
+        port -D
+        node -D
+        fcontext -D
+        module -D
+        ibendport -D
+        ibpkey -D
+        permissive -D
+        boolean -m -1 container_use_devices
+        boolean -m -1 container_use_dri_devices
+        boolean -m -1 domain_can_mmap_files
+        boolean -m -0 httpd_can_network_connect
+        boolean -m -1 samba_export_all_ro
+        boolean -m -1 samba_export_all_rw
+        boolean -m -1 virt_sandbox_use_all_caps
+        boolean -m -1 virt_sandbox_use_netlink
+        boolean -m -1 virt_use_nfs
+        EOF
+
+    - name: Set Storage to persistent in journald.conf
+      lineinfile:
+        path: /etc/systemd/journald.conf
+        regexp: '^#?Storage='
+        line: 'Storage=persistent'
+        state: present
+        backup: yes
+
+    - name: Restart systemd-journald service
+      systemd:
+        name: systemd-journald
+        state: restarted
+
+    - name: Create /etc/sysctl.d/99-unprivileged-ports.conf with the correct setting
+      copy:
+        dest: /etc/sysctl.d/99-unprivileged-ports.conf
+        content: |
+          net.ipv4.ip_unprivileged_port_start=53
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Apply sysctl configuration changes
+      sysctl:
+        name: net.ipv4.ip_unprivileged_port_start
+        value: '53'
+        state: present
+        reload: yes
+
+- name: Setup Postfix
+  import_playbook: playbooks/postfix/smtp-setup.yml
+  vars:
+    wrapped: "{{ lookup('file', 'variables.yml') | from_yaml }}"
+
+- name: Configure SMART
+  import_playbook: playbooks/smart.yml
+
+- name: Install ZFS
+  import_playbook: playbooks/zfs/setup.yml
+
+- name: Install ZFS Cockpit Module
+  import_playbook: playbooks/zfs/cockpit-module.yml
+
+- name: Configure and Test ZFS Notifications
+  import_playbook: playbooks/zfs/notifications.yml
+
+- name: Install ZFS-Auto-Snapshot
+  import_playbook: playbooks/zfs/install-auto-snapshot.yml

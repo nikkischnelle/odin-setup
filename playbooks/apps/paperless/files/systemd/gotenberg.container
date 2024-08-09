@@ -1,0 +1,12 @@
+[Unit]
+Description=Gotenberg for Paperless NGX
+
+[Container]
+Image=docker.io/gotenberg/gotenberg:latest
+Label=io.containers.autoupdate=registry
+ContainerName=paperless-gotenberg
+Exec=gotenberg --chromium-disable-javascript=true --chromium-allow-list=file:///tmp/.*
+
+[Service]
+Restart=on-failure
+RestartSec=10s

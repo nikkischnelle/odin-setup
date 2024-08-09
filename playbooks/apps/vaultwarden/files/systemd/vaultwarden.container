@@ -1,0 +1,19 @@
+[Unit]
+Description=Vaultwarden Server
+
+[Container]
+Image=docker.io/vaultwarden/server:latest
+Label=io.containers.autoupdate=registry
+ContainerName=vaultwarden
+Volume=/${HOME}/data:/data:Z
+UserNS=keep-id
+Network=host
+
+EnvironmentFile=/${HOME}/.env
+
+[Service]
+Restart=on-failure
+RestartSec=10s
+
+[Install]
+WantedBy=default.target

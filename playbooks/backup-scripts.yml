@@ -1,0 +1,32 @@
+---
+- name: Configure backup scripts
+  hosts: all
+  become: yes
+  vars_files: 
+    - vars.yml
+  tasks:
+    # - name: Setup cron job for Media Backup
+    #   cron:
+    #     name: "Daily Media Backup"
+    #     minute: "0"
+    #     hour: "3"
+    #     day: "*"
+    #     month: "*"
+    #     weekday: "*"
+    #     job: "/root/balmung_media_backup.sh > /root/balmung_media.log 2> /root/balmung_media_errors.log"
+        
+    - name: Setup cron job for App Backup
+      cron:
+        name: "Hourly App Backup"
+        minute: "0"
+        hour: "*"
+        day: "*"
+        month: "*"
+        weekday: "*"
+        job: 'if [ -f "/var/lock/gungnir_apps.lock" ]; then exit 0; fi; /root/app_backup.sh > /root/app_backup.log 2>&1'
+    - name: Reminder
+      cron:
+        name: "Reminder"
+        minute: 0
+        hour: 14
+        job: 'echo "Fafnir App Backup is still disabled" | mail -s "Fafnir App Backup" root'

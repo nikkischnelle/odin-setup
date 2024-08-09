@@ -1,0 +1,19 @@
+[Unit]
+Description=HomeAssistant Container
+Requires=esphome.service mosquitto.service nodered.service piper.service zigbee2mqtt.service
+
+[Container]
+Image=ghcr.io/home-assistant/home-assistant:stable
+Label=io.containers.autoupdate=registry
+ContainerName=homeassistant
+Network=host
+
+Volume=/etc/localtime:/etc/localtime:ro
+Volume=/${HOME}/hass-config:/config:Z
+
+[Service]
+Restart=on-failure
+RestartSec=10s
+
+[Install]
+WantedBy=default.target

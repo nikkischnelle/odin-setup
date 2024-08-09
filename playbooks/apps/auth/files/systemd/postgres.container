@@ -1,0 +1,22 @@
+[Unit]
+Description=Postgres DB for Authentik
+Requires=pgdata-volume.service
+After=pgdata-volume.service
+
+[Container]
+Image=docker.io/library/postgres:latest
+Label=io.containers.autoupdate=registry
+ContainerName=postgres-authentik
+Volume=pgdata:/var/lib/postgresql/data
+
+EnvironmentFile=/${HOME}/.env
+
+HealthCmd=pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}
+HealthInterval=30s
+HealthTimeout=5s
+HealthRetries=5
+HealthStartPeriod=20s
+
+[Service]
+Restart=on-failure
+RestartSec=10s

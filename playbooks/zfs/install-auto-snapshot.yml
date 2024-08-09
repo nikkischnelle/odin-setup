@@ -1,0 +1,35 @@
+---
+- name: Install zfs-auto-snapshot
+  hosts: all
+  become: true
+  tasks:
+    - name: Check if zfs-auto-snapshot is already installed
+      ansible.builtin.stat:
+        path: /usr/local/sbin/zfs-auto-snapshot
+      register: zfs_auto_snapshot_stat
+
+    - name: Unzip zfs-auto-snapshot
+      ansible.builtin.unarchive:
+        src: https://github.com/zfsonlinux/zfs-auto-snapshot/archive/upstream/1.2.4.tar.gz
+        dest: /tmp
+        remote_src: yes
+      when: not zfs_auto_snapshot_stat.stat.exists
+
+    - name: Install zfs-auto-snapshot
+      community.general.make:
+        chdir: /tmp/zfs-auto-snapshot-upstream-1.2.4
+        target: install
+      when: not zfs_auto_snapshot_stat.stat.exists
+
+    - name: ensure temporary directory is absent
+      file:
+        path: /tmp/zfs-auto-snapshot-upstream-1.2.4
+        state: absent
+      when: not zfs_auto_snapshot_stat.stat.exists
+
+    - name: move binary
+      copy:
+        src: /usr/local/sbin/zfs-auto-snapshot
+        dest: /usr/sbin//zfs-auto-snapshot
+        remote_src: true
+        mode: u=rwx,g=rx,o=rx

@@ -1,0 +1,24 @@
+[Unit]
+Description=Immich Server
+Requires=model-cache-volume.service database.service redis.service immich-machine-learning.service immich-network.service
+After=model-cache-volume.service redis.service database.service immich-network.service
+
+[Container]
+Image=ghcr.io/immich-app/immich-server:release
+Label=io.containers.autoupdate=registry
+ContainerName=immich
+Network=immich
+
+PublishPort=2283:3001
+
+Volume=/${HOME}/library:/usr/src/app/upload:z
+Volume=/etc/localtime:/etc/localtime:ro
+
+EnvironmentFile=/${HOME}/.env
+
+[Service]
+Restart=on-failure
+RestartSec=10s
+
+[Install]
+WantedBy=default.target

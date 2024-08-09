@@ -1,0 +1,25 @@
+[Unit]
+Description=Mosquitto Container
+Requires=homeassistant-network.service 
+After=homeassistant-network.service
+
+[Container]
+Image=docker.io/eclipse-mosquitto
+Label=io.containers.autoupdate=registry
+ContainerName=mosquitto
+Network=homeassistant
+
+PublishPort=1883:1883
+PublishPort=9001:9001
+
+Volume=/${HOME}/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:Z
+Volume=/${HOME}/mosquitto/mqttuser:/mosquitto/config/mqttuser:Z
+Volume=/${HOME}/mosquitto/data:/mosquitto/data:Z
+Volume=/${HOME}/mosquitto/log:/mosquitto/log:Z
+
+[Service]
+Restart=on-failure
+RestartSec=10s
+
+[Install]
+WantedBy=default.target

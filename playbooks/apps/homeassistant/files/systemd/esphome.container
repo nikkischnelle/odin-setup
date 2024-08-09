@@ -1,0 +1,18 @@
+[Unit]
+Description=ESPHome Container
+
+[Container]
+Image=ghcr.io/esphome/esphome
+Label=io.containers.autoupdate=registry
+ContainerName=esphome
+Network=host
+
+Volume=/etc/localtime:/etc/localtime:ro
+Volume=/${HOME}/esphome-config:/config:Z
+
+[Service]
+Restart=on-failure
+RestartSec=10s
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,111 @@
+---
+- name: Install ZFS
+  hosts: all
+  become: yes
+  tasks:
+    - name: Determine the OS type
+      ansible.builtin.shell: cat /etc/os-release
+      register: os_release
+
+    - name: Set OS-specific variables
+      set_fact:
+        is_fedora: "{{ 'Fedora' in os_release.stdout }}"
+        is_rhel: "{{ 'Rocky' in os_release.stdout or 'Red Hat' in os_release.stdout }}"
+
+    - name: Ensure ZFS-fuse is removed (Fedora only)
+      ansible.builtin.dnf:
+        name: zfs-fuse
+        state: absent
+        disable_gpg_check: yes
+      when: is_fedora
+
+    - name: Install ZFS release package (Fedora)
+      ansible.builtin.dnf:
+        name: "https://zfsonlinux.org/fedora/zfs-release-2-5.f40.noarch.rpm"
+        state: present
+      when: is_fedora
+
+    - name: Install ZFS GPG Key
+      ansible.builtin.rpm_key:
+        state: present
+        key: https://raw.githubusercontent.com/zfsonlinux/zfsonlinux.github.com/master/zfs-release/RPM-GPG-KEY-openzfs-key2
+        fingerprint: 7DC7 299D CF7C 7FD9 CD87 701B A599 FD5E 9DB8 4141
+      when: is_rhel
+
+    - name: Install ZFS release package (RHEL)
+      ansible.builtin.dnf:
+        name: https://zfsonlinux.org/epel/zfs-release-2-3.el9.noarch.rpm
+        state: present
+      when: is_rhel
+
+    - name: Install kernel-devel
+      ansible.builtin.dnf:
+        name: kernel-devel
+        state: present
+      when: is_fedora
+
+    - name: Ensure the zfs repository is enabled
+      community.general.dnf_config_manager:
+        name: zfs
+        state: disabled
+      when: is_rhel
+
+    - name: Ensure the zfs-kmod repository is enabled
+      community.general.dnf_config_manager:
+        name: zfs-kmod
+        state: enabled
+      when: is_rhel
+
+    - name: Install ZFS
+      ansible.builtin.dnf:
+        name: zfs
+        state: present
+
+    - name: Load ZFS module
+      modprobe:
+        name: zfs
+        state: present
+
+    - name: Ensure ZFS module loads at boot
+      ansible.builtin.copy:
+        dest: /etc/modules-load.d/zfs.conf
+        content: "zfs"
+
+    - name: Ensure ZFS is protected by DNF (Fedora only)
+      ansible.builtin.copy:
+        dest: /etc/dnf/protected.d/zfs.conf
+        content: "zfs"
+      when: is_fedora
+
+    - name: Setup cron job for ZFS scrubbing
+      cron:
+        name: "Weekly ZFS scrub"
+        minute: "0"
+        hour: "0"
+        day: "*"
+        month: "*"
+        weekday: "5"
+        job: "zpool list -H -o name | xargs -n1 zpool scrub"
+
+    - name: Create zfs load-key systemd service
+      copy:
+        dest: /etc/systemd/system/zfs-load-key@.service
+        content: |
+          [Unit]
+          Description=Load ZFS keys
+          DefaultDependencies=no
+          Before=zfs-mount.service
+          After=zfs-import.target
+          Requires=zfs-import.target
+          [Service]
+          Type=oneshot
+          RemainAfterExit=yes
+          ExecStart=/sbin/zfs load-key %I
+          [Install]
+          WantedBy=zfs-mount.service
+
+    - name: Enable load-key for zpools
+      systemd:
+        name: "zfs-load-key@{{ item }}"
+        state: enabled
+      loop: "{{ pools }}"

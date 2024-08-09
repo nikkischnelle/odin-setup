@@ -1,0 +1,13 @@
+# Hostname for machine
+hostname: odin
+
+# ZFS 
+pools: []
+
+sender_address: ""
+root_email_address: ""
+smtp_address: ""
+smtp_password: ""
+smtp_port: ""
+
+common_user_ssh_key: ""

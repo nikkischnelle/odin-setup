@@ -1,0 +1,50 @@
+- name: Create users with specified IDs, home directories, and shell
+  hosts: all
+  become: yes
+  vars:
+    users:
+      - { name: "pihole", uid: 3001, home: "/Gungnir/apps/pihole" }
+      - { name: "reverseproxy", uid: 3002, home: "/Gungnir/apps/reverseproxy" }
+      - { name: "jellyfin", uid: 3003, home: "/Gungnir/apps/jellyfin" }
+      - { name: "paperless", uid: 3004, home: "/Gungnir/apps/paperless" }
+      - { name: "staticpages", uid: 3005, home: "/Gungnir/apps/staticpages" }
+      - { name: "uptime", uid: 3006, home: "/Gungnir/apps/uptime" }
+      - { name: "wiki", uid: 3007, home: "/Gungnir/apps/wiki" }
+      - { name: "vaultwarden", uid: 3008, home: "/Gungnir/apps/vaultwarden" }
+      - { name: "nextcloud", uid: 3009, home: "/Gungnir/apps/nextcloud" }
+      - { name: "auth", uid: 3010, home: "/Gungnir/apps/auth" }
+      - { name: "homeassistant", uid: 3011, home: "/Gungnir/apps/homeassistant" }
+      - { name: "ai", uid: 3015, home: "/Gungnir/apps/ai" }
+      - { name: "photos", uid: 3016, home: "/Gungnir/apps/photos" }
+      - { name: "syncthing", uid: 3017, home: "/Gungnir/apps/syncthing" }
+
+  tasks:
+    - name: Ensure shared_ssh_key group exists
+      group:
+        name: shared_ssh_key
+        state: present
+
+    - name: Create users
+      user:
+        name: "{{ item.name }}"
+        uid: "{{ item.uid }}"
+        home: "{{ item.home }}"
+        shell: /bin/zsh
+        state: present
+        groups:
+        - shared_ssh_key
+        - systemd-journal
+      loop: "{{ users }}"
+      loop_control:
+        label: "{{ item.name }}"
+
+    - name: Ensure home directories exist and have correct permissions
+      file:
+        path: "{{ item.home }}"
+        state: directory
+        owner: "{{ item.name }}"
+        group: shared_ssh_key
+        mode: '0755'
+      loop: "{{ users }}"
+      loop_control:
+        label: "{{ item.name }}"

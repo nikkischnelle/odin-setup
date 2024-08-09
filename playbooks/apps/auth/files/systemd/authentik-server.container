@@ -1,0 +1,24 @@
+[Unit]
+Description=Authentik Server
+Requires=postgres.service redis.service authentik-worker.service
+After=postgres.service redis.service
+
+[Container]
+Image=ghcr.io/goauthentik/server:2024.6.2
+Label=io.containers.autoupdate=registry
+ContainerName=authentik-worker
+Volume=/${HOME}/media:/media:z
+Volume=/${HOME}/custom-templates:/templates:z
+PublishPort=2080:9000
+PublishPort=2443:9443
+Exec=server
+UserNS=keep-id
+
+EnvironmentFile=/${HOME}/.env
+
+[Service]
+Restart=on-failure
+RestartSec=10s
+
+[Install]
+WantedBy=default.target

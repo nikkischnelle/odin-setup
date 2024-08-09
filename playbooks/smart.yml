@@ -1,0 +1,28 @@
+---
+- name: Configure SMART (+Notifications)
+  hosts: all
+  become: yes
+  tasks:
+    - name: Create smartdnotify script
+      copy:
+        dest: /usr/local/bin/smartdnotify
+        content: |
+          #!/bin/sh
+          # Send email
+          echo "$SMARTD_MESSAGE" | mail -s "$SMARTD_FAILTYPE" "$SMARTD_ADDRESS"
+          # Notify user
+          wall "$SMARTD_MESSAGE"
+          # Notify using ntfy.sh
+          curl -d "SMART Failure: $SMARTD_FAILTYPE" {TOPIC}
+        mode: '0755'
+
+    - name: Configure smartd.conf
+      copy:
+        dest: /etc/smartmontools/smartd.conf
+        content: |
+          DEVICESCAN -a -o on -S on -s (S/../.././00|L/../../7/./01|X/../.././06) -m root -M exec /usr/local/bin/smartdnotify -n sleep
+
+    - name: Reload smartd service
+      systemd:
+        name: smartd
+        state: reloaded

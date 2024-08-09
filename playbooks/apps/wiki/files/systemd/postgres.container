@@ -1,0 +1,16 @@
+[Unit]
+Description=Postgres DB for WikiJS
+Requires=pgdata-volume.service
+After=pgdata-volume.service
+
+[Container]
+Image=docker.io/library/postgres:latest
+Label=io.containers.autoupdate=registry
+ContainerName=wikipostgres
+
+Volume=pgdata:/var/lib/postgresql/data
+
+EnvironmentFile=/${HOME}/.env
+
+[Install]
+WantedBy=default.target

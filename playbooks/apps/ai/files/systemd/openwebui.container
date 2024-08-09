@@ -1,0 +1,14 @@
+[Unit]
+Requires=ollama.service ai-network.service
+After=ai-network.service
+
+[Container]
+Image=ghcr.io/open-webui/open-webui:main
+ContainerName=open-webui
+PublishPort=3478:8080
+Volume=/${HOME}/openwebui-data:/app/backend/data:Z
+Environment=OLLAMA_BASE_URL=http://ollama:11434
+Environment=ANONYMIZED_TELEMETRY=False
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,21 @@
+[Unit]
+Description=NodeRED for HomeAssistant
+After=homeassistant-network.service homeassistant.service
+Requires=homeassistant-network.service homeassistant.service
+
+[Container]
+Image=docker.io/nodered/node-red:latest
+Label=io.containers.autoupdate=registry
+ContainerName=nodered
+Network=host
+
+Environment=TZ=Europe/Berlin
+
+Volume=/${HOME}/nodered-data:/data:Z
+
+[Service]
+Restart=on-failure
+RestartSec=10s
+
+[Install]
+WantedBy=default.target
