@@ -21,11 +21,6 @@
         name: epel-release
         state: present
 
-    - name: Install Tailscale Repo
-      community.general.dnf_config_manager:
-        name: "https://pkgs.tailscale.com/stable/rhel/9/tailscale.repo"
-        state: enabled
-
     - name: Install basic packages
       dnf:
         name: 
@@ -47,8 +42,8 @@
           - neovim
           - python3-jinja2
           - policycoreutils-python-utils
-          - tailscale
           - authbind
+          - sqlite
         state: present
 
     - name: Reboot
@@ -84,8 +79,6 @@
         boolean -m -1 container_use_dri_devices
         boolean -m -1 domain_can_mmap_files
         boolean -m -0 httpd_can_network_connect
-        boolean -m -1 samba_export_all_ro
-        boolean -m -1 samba_export_all_rw
         boolean -m -1 virt_sandbox_use_all_caps
         boolean -m -1 virt_sandbox_use_netlink
         boolean -m -1 virt_use_nfs
@@ -112,13 +105,6 @@
         owner: root
         group: root
         mode: '0644'
-
-    - name: Apply sysctl configuration changes
-      sysctl:
-        name: net.ipv4.ip_unprivileged_port_start
-        value: '53'
-        state: present
-        reload: yes
 
 - name: Setup Postfix
   import_playbook: playbooks/postfix/smtp-setup.yml

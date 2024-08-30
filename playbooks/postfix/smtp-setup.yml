@@ -5,19 +5,12 @@
 - name: Configure Postfix
   hosts: all
   become: yes
+  vars:
+    domain_name: "localdomain"
   tasks:
     - name: Get the hostname
       command: hostname
       register: hostname_result
-
-    - name: Get the domain name
-      command: hostname -d
-      register: domain_result
-      ignore_errors: yes
-
-    - name: Set default domain if no domain is returned
-      set_fact:
-        domain_name: "{{ domain_result.stdout if domain_result.stdout != '' else 'localdomain' }}"
 
     - name: Construct email address
       set_fact:

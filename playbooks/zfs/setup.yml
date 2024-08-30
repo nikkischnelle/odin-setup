@@ -85,7 +85,7 @@
         day: "*"
         month: "*"
         weekday: "5"
-        job: "/usr/sbin/zpool list -H -o name | xargs -n1 /usr/sbinzpool scrub"
+        job: "/usr/sbin/zpool list -H -o name | xargs -n1 /usr/sbin/zpool scrub"
 
     - name: Create zfs load-key systemd service
       copy:
